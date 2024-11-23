@@ -1,3 +1,4 @@
+package ui;
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
@@ -5,7 +6,12 @@
 
 
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+
+import database.DatabaseConnection;
+
 import javax.swing.*;
+import java.sql.*;
+import javax.swing.table.DefaultTableModel;
 
 
 /**
@@ -17,9 +23,40 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     /**
      * Creates new form AplikasiInventarisBarang
      */
+    private Connection conn;
+    private DefaultTableModel tableModel;
+
     public AplikasiInventarisBarang() {
         initComponents();
         setLocationRelativeTo(null);
+        conn = DatabaseConnection.getConnection();
+        setupTable();
+        loadData();
+    }
+
+    private void setupTable() {
+        tableModel = (DefaultTableModel) jTable1.getModel();
+        jTable1.setRowSelectionAllowed(true);
+    }
+
+    private void loadData() {
+        tableModel.setRowCount(0);
+        String sql = "SELECT * FROM barang";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                tableModel.addRow(new Object[]{
+                    rs.getInt("id"),
+                    rs.getString("nama"),
+                    rs.getString("kategori"),
+                    rs.getInt("jumlah"),
+                    rs.getString("kondisi"),
+                    rs.getString("lokasi")
+                });
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage());
+        }
     }
 
     /**
@@ -171,7 +208,7 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.ipadx = 500;
+        gridBagConstraints.ipadx = 700;
         gridBagConstraints.ipady = 170;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanel3.add(jScrollPane1, gridBagConstraints);
@@ -385,7 +422,30 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     }// GEN-LAST:event_txtCariActionPerformed
 
     private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnCariActionPerformed
-        // TODO add your handling code here:
+        String searchTerm = txtCari.getText();
+        tableModel.setRowCount(0);
+
+        String sql = "SELECT * FROM barang WHERE nama LIKE ? OR kategori LIKE ? OR lokasi LIKE ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            String term = "%" + searchTerm + "%";
+            pstmt.setString(1, term);
+            pstmt.setString(2, term);
+            pstmt.setString(3, term);
+
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                tableModel.addRow(new Object[]{
+                    rs.getInt("id"),
+                    rs.getString("nama"),
+                    rs.getString("kategori"),
+                    rs.getInt("jumlah"),
+                    rs.getString("kondisi"),
+                    rs.getString("lokasi")
+                });
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error searching data: " + e.getMessage());
+        }
     }// GEN-LAST:event_btnCariActionPerformed
 
     private void btnMuatActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnMuatActionPerformed
@@ -406,7 +466,26 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     }// GEN-LAST:event_jButton1ActionPerformed
 
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnTambahActionPerformed
+        String nama = txtNama.getText();
+        String kategori = cbKategori.getSelectedItem().toString();
+        int jumlah = (Integer) jSpinner1.getValue();
+        String kondisi = getSelectedKondisi();
+        String lokasi = txtLokasi.getText();
 
+        String sql = "INSERT INTO barang (nama, kategori, jumlah, kondisi, lokasi) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nama);
+            pstmt.setString(2, kategori);
+            pstmt.setInt(3, jumlah);
+            pstmt.setString(4, kondisi);
+            pstmt.setString(5, lokasi);
+            pstmt.executeUpdate();
+
+            clearFields();
+            loadData();
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error adding data: " + e.getMessage());
+        }
     }// GEN-LAST:event_btnTambahActionPerformed
 
     private void btnUbahActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnUbahActionPerformed
@@ -414,12 +493,41 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     }// GEN-LAST:event_btnUbahActionPerformed
 
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnHapusActionPerformed
+        int row = jTable1.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Please select a row to delete");
+            return;
+        }
 
+        int id = (Integer) jTable1.getValueAt(row, 0);
+        String sql = "DELETE FROM barang WHERE id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+            loadData();
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error deleting data: " + e.getMessage());
+        }
     }// GEN-LAST:event_btnHapusActionPerformed
 
     private void radioBaruActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_radioBaruActionPerformed
         // TODO add your handling code here:
     }// GEN-LAST:event_radioBaruActionPerformed
+
+    private String getSelectedKondisi() {
+        if (radioBaru.isSelected()) return "Baru";
+        if (radioBekas.isSelected()) return "Bekas";
+        if (radioRusak.isSelected()) return "Rusak";
+        return "";
+    }
+
+    private void clearFields() {
+        txtNama.setText("");
+        cbKategori.setSelectedIndex(0);
+        jSpinner1.setValue(0);
+        groupKondisi.clearSelection();
+        txtLokasi.setText("");
+    }
 
     /**
      * @param args the command line arguments
