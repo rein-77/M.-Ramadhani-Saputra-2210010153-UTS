@@ -1,8 +1,7 @@
 /**
- * Kelas Barang merepresentasikan sebuah item dalam sistem inventaris.
- * Kelas ini menyimpan informasi detail tentang suatu barang termasuk identifikasi,
- * karakteristik fisik, dan informasi lokasi.
- * 
+ * Kelas Barang merepresentasikan item dalam sistem inventaris.
+ * Kelas ini menyimpan informasi detail tentang setiap barang, termasuk identifikasi unik,
+ * karakteristik fisik, dan lokasi penyimpanan.
  */
 
 package model;

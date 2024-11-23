@@ -42,16 +42,16 @@ public class DatabaseConnection {
     public static Connection getConnection() {
         if (connection == null) {
             try {
-                // Get the project's root directory
+                // Dapatkan direktori root proyek
                 String userDir = System.getProperty("user.dir");
-                // Create db directory if it doesn't exist
+                // Buat direktori db jika belum ada
                 File dbDir = new File(userDir, "db");
                 if (!dbDir.exists()) {
                     dbDir.mkdir();
                 }
-                // Create full path to database file
+                // Membuat path lengkap ke file database
                 String dbPath = new File(dbDir, "inventory.db").getAbsolutePath();
-                // Connect to database
+                // Menghubungkan ke database
                 String url = "jdbc:sqlite:" + dbPath;
                 connection = DriverManager.getConnection(url);
                 createTableIfNotExists();
