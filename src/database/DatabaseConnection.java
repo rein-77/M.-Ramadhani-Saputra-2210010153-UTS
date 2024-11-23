@@ -4,10 +4,12 @@ import java.sql.*;
 import java.io.File;
 
 public class DatabaseConnection {
+
     private static Connection connection = null;
-    
-    private DatabaseConnection() {} // Private constructor to prevent instantiation
-    
+
+    private DatabaseConnection() {
+    } // Private constructor to prevent instantiation
+
     public static Connection getConnection() {
         if (connection == null) {
             try {
@@ -30,17 +32,17 @@ public class DatabaseConnection {
         }
         return connection;
     }
-    
+
     private static void createTableIfNotExists() {
         String sql = "CREATE TABLE IF NOT EXISTS barang ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            + "nama TEXT NOT NULL,"
-            + "kategori TEXT NOT NULL,"
-            + "jumlah INTEGER NOT NULL,"
-            + "kondisi TEXT NOT NULL,"
-            + "lokasi TEXT NOT NULL"
-            + ")";
-        
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "nama TEXT NOT NULL,"
+                + "kategori TEXT NOT NULL,"
+                + "jumlah INTEGER NOT NULL,"
+                + "kondisi TEXT NOT NULL,"
+                + "lokasi TEXT NOT NULL"
+                + ")";
+
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {

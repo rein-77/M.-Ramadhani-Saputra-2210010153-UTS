@@ -5,13 +5,16 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import database.DatabaseConnection;
+
 public class BarangDAO {
+
     private final Connection conn;
-    
+
     public BarangDAO() {
-        conn = DatabaseUtil.getConnection();
+        conn = DatabaseConnection.getConnection();
     }
-    
+
     // Improved input validation
     private void validateBarang(Barang barang) throws SQLException {
         if (barang.getNama() == null || barang.getNama().trim().isEmpty()) {
@@ -22,6 +25,22 @@ public class BarangDAO {
         }
         if (barang.getKondisi() == null || barang.getKondisi().trim().isEmpty()) {
             throw new SQLException("Kondisi barang harus dipilih");
+        }
+    }
+
+    public boolean isBarangExists(Barang barang) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM barang WHERE "
+                + "LOWER(nama) = LOWER(?) AND "
+                + "LOWER(kategori) = LOWER(?) AND "
+                + "LOWER(lokasi) = LOWER(?)";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, barang.getNama().trim());
+            pstmt.setString(2, barang.getKategori().trim());
+            pstmt.setString(3, barang.getLokasi().trim());
+
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next() && rs.getInt(1) > 0;
         }
     }
 
@@ -37,7 +56,7 @@ public class BarangDAO {
             pstmt.executeUpdate();
         }
     }
-    
+
     public void delete(int id) throws SQLException {
         String sql = "DELETE FROM barang WHERE id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -45,59 +64,58 @@ public class BarangDAO {
             pstmt.executeUpdate();
         }
     }
-    
+
     public List<Barang> search(String keyword) throws SQLException {
         if (keyword == null || keyword.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        
+
         List<Barang> results = new ArrayList<>();
         // Modified SQL to use LOWER() function for case-insensitive search
-        String sql = "SELECT * FROM barang WHERE " +
-                    "LOWER(nama) LIKE LOWER(?) OR " +
-                    "LOWER(kategori) LIKE LOWER(?) OR " +
-                    "LOWER(lokasi) LIKE LOWER(?)";
-                    
+        String sql = "SELECT * FROM barang WHERE "
+                + "LOWER(nama) LIKE LOWER(?) OR "
+                + "LOWER(kategori) LIKE LOWER(?) OR "
+                + "LOWER(lokasi) LIKE LOWER(?)";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             String term = "%" + keyword.toLowerCase() + "%";
             pstmt.setString(1, term);
             pstmt.setString(2, term);
             pstmt.setString(3, term);
-            
+
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 results.add(new Barang(
-                    rs.getInt("id"),
-                    rs.getString("nama"),
-                    rs.getString("kategori"),
-                    rs.getInt("jumlah"),
-                    rs.getString("kondisi"),
-                    rs.getString("lokasi")
+                        rs.getInt("id"),
+                        rs.getString("nama"),
+                        rs.getString("kategori"),
+                        rs.getInt("jumlah"),
+                        rs.getString("kondisi"),
+                        rs.getString("lokasi")
                 ));
             }
         }
         return results;
     }
-    
+
     public List<Barang> getAll() throws SQLException {
         List<Barang> results = new ArrayList<>();
         String sql = "SELECT * FROM barang";
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 results.add(new Barang(
-                    rs.getInt("id"),
-                    rs.getString("nama"),
-                    rs.getString("kategori"),
-                    rs.getInt("jumlah"),
-                    rs.getString("kondisi"),
-                    rs.getString("lokasi")
+                        rs.getInt("id"),
+                        rs.getString("nama"),
+                        rs.getString("kategori"),
+                        rs.getInt("jumlah"),
+                        rs.getString("kondisi"),
+                        rs.getString("lokasi")
                 ));
             }
         }
         return results;
     }
-    
+
     public void update(Barang barang) throws SQLException {
         validateBarang(barang);
         String sql = "UPDATE barang SET nama=?, kategori=?, jumlah=?, kondisi=?, lokasi=? WHERE id=?";
@@ -111,4 +129,5 @@ public class BarangDAO {
             pstmt.executeUpdate();
         }
     }
+
 }

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nama": "Gelas",
+    "kategori": "Peralatan Dapur",
+    "jumlah": 2,
+    "kondisi": "Baru",
+    "lokasi": "Lemari Biru"
+  },
+  {
+    "id": 3,
+    "nama": "Kipas Angin",
+    "kategori": "Elektronik",
+    "jumlah": 3,
+    "kondisi": "Rusak",
+    "lokasi": "Gudang Lama"
+  },
+  {
+    "id": 4,
+    "nama": "Setrika",
+    "kategori": "Peralatan Rumah",
+    "jumlah": 3,
+    "kondisi": "Bekas",
+    "lokasi": "Kamar 1"
+  }
+]
