@@ -8,10 +8,14 @@ package ui;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 
 import database.DatabaseConnection;
+import dao.BarangDAO;
+import model.Barang;
+import util.SearchUtil;
 
 import javax.swing.*;
 import java.sql.*;
 import javax.swing.table.DefaultTableModel;
+import java.util.List;
 
 
 /**
@@ -25,11 +29,14 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
      */
     private Connection conn;
     private DefaultTableModel tableModel;
+    private BarangDAO barangDAO;
+    private Integer selectedId;
 
     public AplikasiInventarisBarang() {
         initComponents();
         setLocationRelativeTo(null);
         conn = DatabaseConnection.getConnection();
+        barangDAO = new BarangDAO();
         setupTable();
         loadData();
     }
@@ -56,6 +63,21 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage());
+        }
+    }
+
+    private void validateInput() throws Exception {
+        if (txtNama.getText().trim().isEmpty()) {
+            throw new Exception("Nama barang harus diisi");
+        }
+        if ((Integer)jSpinner1.getValue() < 0) {
+            throw new Exception("Jumlah tidak boleh negatif");
+        }
+        if (!radioBaru.isSelected() && !radioBekas.isSelected() && !radioRusak.isSelected()) {
+            throw new Exception("Pilih kondisi barang");
+        }
+        if (txtLokasi.getText().trim().isEmpty()) {
+            throw new Exception("Lokasi penyimpanan harus diisi");
         }
     }
 
@@ -236,7 +258,7 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         jLabel2.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
         jLabel2.setText("Nama Barang  :");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(4, 4, 4, 4);
         jPanel2.add(jLabel2, gridBagConstraints);
 
@@ -245,7 +267,7 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(4, 4, 4, 4);
         jPanel2.add(jLabel4, gridBagConstraints);
 
@@ -317,7 +339,7 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(4, 4, 4, 4);
         jPanel2.add(jLabel1, gridBagConstraints);
 
@@ -361,7 +383,7 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(4, 4, 4, 4);
         jPanel2.add(jLabel6, gridBagConstraints);
 
@@ -379,7 +401,7 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(4, 4, 4, 4);
         jPanel2.add(jLabel7, gridBagConstraints);
 
@@ -408,9 +430,9 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 377, Short.MAX_VALUE)
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 505, Short.MAX_VALUE)
+                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -422,29 +444,40 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     }// GEN-LAST:event_txtCariActionPerformed
 
     private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnCariActionPerformed
-        String searchTerm = txtCari.getText();
-        tableModel.setRowCount(0);
+        String searchTerm = txtCari.getText().trim();
+        
+        if (searchTerm.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Masukkan kata kunci pencarian", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-        String sql = "SELECT * FROM barang WHERE nama LIKE ? OR kategori LIKE ? OR lokasi LIKE ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            String term = "%" + searchTerm + "%";
-            pstmt.setString(1, term);
-            pstmt.setString(2, term);
-            pstmt.setString(3, term);
+        try {
+            List<Barang> results = barangDAO.search(searchTerm);
+            tableModel.setRowCount(0);
+            
+            if (results.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Data tidak ditemukan untuk kata kunci: '" + searchTerm + "'",
+                    "Info", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
 
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
+            for (Barang barang : results) {
                 tableModel.addRow(new Object[]{
-                    rs.getInt("id"),
-                    rs.getString("nama"),
-                    rs.getString("kategori"),
-                    rs.getInt("jumlah"),
-                    rs.getString("kondisi"),
-                    rs.getString("lokasi")
+                    barang.getId(),
+                    barang.getNama(),
+                    barang.getKategori(),
+                    barang.getJumlah(),
+                    barang.getKondisi(),
+                    barang.getLokasi()
                 });
             }
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error searching data: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, 
+                "Error saat mencari data: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
         }
     }// GEN-LAST:event_btnCariActionPerformed
 
@@ -457,57 +490,97 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     }// GEN-LAST:event_btnSimpanActionPerformed
 
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_jTable1MouseClicked
-
+        int row = jTable1.getSelectedRow();
+        if (row >= 0) {
+            selectedId = (Integer) jTable1.getValueAt(row, 0);
+            txtNama.setText(jTable1.getValueAt(row, 1).toString());
+            cbKategori.setSelectedItem(jTable1.getValueAt(row, 2).toString());
+            jSpinner1.setValue(jTable1.getValueAt(row, 3));
+            
+            String kondisi = jTable1.getValueAt(row, 4).toString();
+            switch(kondisi) {
+                case "Baru": radioBaru.setSelected(true); break;
+                case "Bekas": radioBekas.setSelected(true); break;
+                case "Rusak": radioRusak.setSelected(true); break;
+            }
+            
+            txtLokasi.setText(jTable1.getValueAt(row, 5).toString());
+        }
     }// GEN-LAST:event_jTable1MouseClicked
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-        System.exit(0);
+        showConfirmDialog("Apakah Anda yakin ingin keluar dari aplikasi?", () -> {
+            System.exit(0);
+        });
     }// GEN-LAST:event_jButton1ActionPerformed
 
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnTambahActionPerformed
-        String nama = txtNama.getText();
-        String kategori = cbKategori.getSelectedItem().toString();
-        int jumlah = (Integer) jSpinner1.getValue();
-        String kondisi = getSelectedKondisi();
-        String lokasi = txtLokasi.getText();
+        try {
+            validateInput();
+            String nama = txtNama.getText().trim();
+            String kategori = cbKategori.getSelectedItem().toString();
+            int jumlah = (Integer) jSpinner1.getValue();
+            String kondisi = getSelectedKondisi();
+            String lokasi = txtLokasi.getText().trim();
 
-        String sql = "INSERT INTO barang (nama, kategori, jumlah, kondisi, lokasi) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, nama);
-            pstmt.setString(2, kategori);
-            pstmt.setInt(3, jumlah);
-            pstmt.setString(4, kondisi);
-            pstmt.setString(5, lokasi);
-            pstmt.executeUpdate();
-
+            barangDAO.add(new Barang(0, nama, kategori, jumlah, kondisi, lokasi));
             clearFields();
             loadData();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error adding data: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Data berhasil ditambahkan", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }// GEN-LAST:event_btnTambahActionPerformed
 
     private void btnUbahActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnUbahActionPerformed
+        if (selectedId == null) {
+            JOptionPane.showMessageDialog(this, "Pilih data yang akan diubah");
+            return;
+        }
 
+        try {
+            Barang barang = new Barang(
+                selectedId,
+                txtNama.getText(),
+                cbKategori.getSelectedItem().toString(),
+                (Integer) jSpinner1.getValue(),
+                getSelectedKondisi(),
+                txtLokasi.getText()
+            );
+            
+            barangDAO.update(barang);
+            clearFields();
+            loadData();
+            selectedId = null;
+            JOptionPane.showMessageDialog(this, "Data berhasil diubah");
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error updating data: " + e.getMessage());
+        }
     }// GEN-LAST:event_btnUbahActionPerformed
 
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnHapusActionPerformed
         int row = jTable1.getSelectedRow();
         if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a row to delete");
+            JOptionPane.showMessageDialog(this, "Pilih data yang akan dihapus");
             return;
         }
 
         int id = (Integer) jTable1.getValueAt(row, 0);
-        String sql = "DELETE FROM barang WHERE id = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            pstmt.executeUpdate();
-            loadData();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error deleting data: " + e.getMessage());
-        }
+        String nama = (String) jTable1.getValueAt(row, 1);
+        
+        showConfirmDialog(
+            "Apakah Anda yakin ingin menghapus data " + nama + "?",
+            () -> {
+                try {
+                    barangDAO.delete(id);
+                    loadData();
+                    clearFields();
+                    JOptionPane.showMessageDialog(this, "Data berhasil dihapus");
+                } catch (SQLException e) {
+                    JOptionPane.showMessageDialog(this, "Error deleting data: " + e.getMessage());
+                }
+            }
+        );
     }// GEN-LAST:event_btnHapusActionPerformed
 
     private void radioBaruActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_radioBaruActionPerformed
@@ -527,6 +600,20 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         jSpinner1.setValue(0);
         groupKondisi.clearSelection();
         txtLokasi.setText("");
+    }
+
+    private void showConfirmDialog(String message, Runnable onConfirm) {
+        int result = JOptionPane.showConfirmDialog(
+            this,
+            message,
+            "Konfirmasi",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        
+        if (result == JOptionPane.YES_OPTION) {
+            onConfirm.run();
+        }
     }
 
     /**
