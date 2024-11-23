@@ -1,3 +1,18 @@
+/**
+ * Utility class untuk membantu operasi pencarian dalam aplikasi.
+ * Class ini menyediakan metode-metode statis untuk validasi dan petunjuk pencarian.
+ */
+
+/**
+ * Memvalidasi term pencarian berdasarkan kriteria berikut:
+ * - Tidak boleh null
+ * - Tidak boleh string kosong setelah di-trim
+ * - Minimal memiliki 3 karakter setelah di-trim
+ *
+ * @param term String yang akan divalidasi sebagai term pencarian
+ * @return boolean true jika term valid, false jika tidak memenuhi kriteria
+ */
+
 package util;
 
 public class SearchUtil {

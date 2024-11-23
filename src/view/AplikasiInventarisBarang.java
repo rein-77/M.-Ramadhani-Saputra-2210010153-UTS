@@ -34,6 +34,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     private BarangController controller;  // Add controller field
     private Integer selectedId;
 
+    /**
+     * Constructor untuk inisialisasi form dan komponen-komponennya.
+     * Melakukan setup koneksi database dan inisialisasi objek yang diperlukan.
+     */
     public AplikasiInventarisBarang() {
         initComponents();
         setLocationRelativeTo(null);
@@ -44,11 +48,19 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         loadData();
     }
 
+    /**
+     * Melakukan setup awal tabel dengan model default.
+     * Mengatur properti seleksi baris tabel.
+     */
     private void setupTable() {
         tableModel = (DefaultTableModel) jTable1.getModel();
         jTable1.setRowSelectionAllowed(true);
     }
 
+    /**
+     * Memuat ulang data dari database ke tabel.
+     * Mengosongkan model tabel terlebih dahulu sebelum mengisi dengan data baru.
+     */
     private void loadData() {
         tableModel.setRowCount(0);
         String sql = "SELECT * FROM barang";
@@ -68,6 +80,12 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * Melakukan validasi input sebelum menyimpan/mengubah data.
+     * Memastikan field-field wajib telah diisi dengan benar.
+     * 
+     * @throws Exception jika ada input yang tidak valid
+     */
     private void validateInput() throws Exception {
         if (txtNama.getText().trim().isEmpty()) {
             throw new Exception("Nama barang harus diisi");
@@ -469,6 +487,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         // TODO add your handling code here:
     }// GEN-LAST:event_txtCariActionPerformed
 
+    /**
+     * Event handler untuk tombol Cari.
+     * Melakukan pencarian data berdasarkan keyword yang diinput user.
+     */
     private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnCariActionPerformed
         String searchTerm = txtCari.getText().trim();
 
@@ -513,6 +535,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         }
     }// GEN-LAST:event_btnCariActionPerformed
 
+    /**
+     * Event handler untuk tombol Muat.
+     * Mengimpor data dari file JSON yang dipilih user.
+     */
     private void btnMuatActionPerformed(java.awt.event.ActionEvent evt) {
         JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + File.separator + "db");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
@@ -542,6 +568,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * Event handler untuk tombol Simpan.
+     * Mengekspor data ke file JSON dengan nama berdasarkan timestamp.
+     */
     private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {
         try {
             String fileName = "inventory_"
@@ -591,6 +621,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         });
     }// GEN-LAST:event_jButton1ActionPerformed
 
+    /**
+     * Event handler untuk tombol Tambah.
+     * Memvalidasi input dan menyimpan data baru ke database.
+     */
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnTambahActionPerformed
         try {
             validateInput();
@@ -609,6 +643,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         }
     }// GEN-LAST:event_btnTambahActionPerformed
 
+    /**
+     * Event handler untuk tombol Ubah.
+     * Memvalidasi input dan mengupdate data yang dipilih di database.
+     */
     private void btnUbahActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnUbahActionPerformed
         if (selectedId == null) {
             JOptionPane.showMessageDialog(this, "Pilih data yang akan diubah");
@@ -635,6 +673,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         }
     }// GEN-LAST:event_btnUbahActionPerformed
 
+    /**
+     * Event handler untuk tombol Hapus.
+     * Menampilkan konfirmasi dan menghapus data yang dipilih dari database.
+     */
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnHapusActionPerformed
         int row = jTable1.getSelectedRow();
         if (row < 0) {
@@ -664,6 +706,11 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         // TODO add your handling code here:
     }// GEN-LAST:event_radioBaruActionPerformed
 
+    /**
+     * Mendapatkan kondisi barang yang dipilih dari radio button.
+     * 
+     * @return String kondisi barang ("Baru", "Bekas", atau "Rusak")
+     */
     private String getSelectedKondisi() {
         if (radioBaru.isSelected()) {
             return "Baru";
@@ -677,6 +724,10 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         return "";
     }
 
+    /**
+     * Mengosongkan semua field input ke nilai default.
+     * Dipanggil setelah operasi tambah/ubah/hapus berhasil.
+     */
     private void clearFields() {
         txtNama.setText("");
         cbKategori.setSelectedIndex(0);
@@ -685,6 +736,12 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
         txtLokasi.setText("");
     }
 
+    /**
+     * Menampilkan dialog konfirmasi dengan pesan kustom.
+     * 
+     * @param message Pesan yang akan ditampilkan
+     * @param onConfirm Aksi yang akan dijalankan jika user memilih Yes
+     */
     private void showConfirmDialog(String message, Runnable onConfirm) {
         int result = JOptionPane.showConfirmDialog(
                 this,
@@ -700,7 +757,8 @@ public class AplikasiInventarisBarang extends javax.swing.JFrame {
     }
 
     /**
-     * @param args the command line arguments
+     * Main method sebagai entry point aplikasi.
+     * Mengatur look and feel dan menampilkan form utama.
      */
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */

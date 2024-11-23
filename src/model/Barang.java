@@ -1,14 +1,28 @@
+/**
+ * Kelas Barang merepresentasikan sebuah item dalam sistem inventaris.
+ * Kelas ini menyimpan informasi detail tentang suatu barang termasuk identifikasi,
+ * karakteristik fisik, dan informasi lokasi.
+ * 
+ */
+
 package model;
 
+/**
+ * Model untuk menyimpan data barang inventaris.
+ * Kelas ini berfungsi sebagai struktur data utama untuk menyimpan informasi barang.
+ */
 public class Barang {
+    // Properti-properti barang
+    private int id;                 // ID unik untuk identifikasi barang di database
+    private String nama;            // Nama atau judul barang
+    private String kategori;        // Kategori/jenis barang (mis: Elektronik, Furnitur)
+    private int jumlah;            // Jumlah unit barang yang tersedia
+    private String kondisi;         // Status kondisi barang (Baru/Bekas/Rusak)
+    private String lokasi;          // Tempat penyimpanan barang
 
-    private int id;
-    private String nama;
-    private String kategori;
-    private int jumlah;
-    private String kondisi;
-    private String lokasi;
-
+    /**
+     * Konstruktor untuk membuat objek barang baru
+     */
     public Barang(int id, String nama, String kategori, int jumlah, String kondisi, String lokasi) {
         this.id = id;
         this.nama = nama;
@@ -18,7 +32,7 @@ public class Barang {
         this.lokasi = lokasi;
     }
 
-    // Getters and setters
+    // Getter dan Setter
     public int getId() {
         return id;
     }

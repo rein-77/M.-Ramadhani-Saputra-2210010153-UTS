@@ -1,3 +1,30 @@
+/**
+ * Kelas akses data untuk operasi CRUD barang.
+ * Menangani semua interaksi dengan database untuk entitas Barang.
+ */
+/**
+ * Kelas DAO (Data Access Object) untuk mengelola operasi database pada entitas Barang.
+ * Kelas ini menangani semua interaksi dengan database untuk tabel barang, termasuk
+ * operasi CRUD (Create, Read, Update, Delete) dan pencarian.
+ * 
+ * Fitur utama:
+ * - Validasi data barang sebelum operasi database
+ * - Pengecekan duplikasi barang
+ * - Operasi CRUD untuk data barang
+ * - Pencarian barang berdasarkan keyword (case-insensitive)
+ * 
+ * Penggunaan:
+ * BarangDAO dao = new BarangDAO();
+ * dao.add(barang);     // Menambah barang baru
+ * dao.update(barang);  // Memperbarui data barang
+ * dao.delete(id);      // Menghapus barang
+ * dao.getAll();        // Mendapatkan semua data barang
+ * dao.search(keyword); // Mencari barang berdasarkan keyword
+ * 
+ * @see Barang
+ * @see DatabaseConnection
+ */
+
 package dao;
 
 import model.Barang;
@@ -7,6 +34,7 @@ import java.util.List;
 
 import database.DatabaseConnection;
 
+
 public class BarangDAO {
 
     private final Connection conn;
@@ -15,7 +43,10 @@ public class BarangDAO {
         conn = DatabaseConnection.getConnection();
     }
 
-    // Improved input validation
+    /**
+     * Memvalidasi data barang sebelum operasi database.
+     * @throws SQLException jika validasi gagal
+     */
     private void validateBarang(Barang barang) throws SQLException {
         if (barang.getNama() == null || barang.getNama().trim().isEmpty()) {
             throw new SQLException("Nama barang tidak boleh kosong");
@@ -28,6 +59,12 @@ public class BarangDAO {
         }
     }
 
+    /**
+     * Memeriksa keberadaan barang berdasarkan nama, kategori, dan lokasi.
+     * Pemeriksaan bersifat case-insensitive.
+     * @param barang objek barang yang akan diperiksa
+     * @return true jika ditemukan barang yang sama
+     */
     public boolean isBarangExists(Barang barang) throws SQLException {
         String sql = "SELECT COUNT(*) FROM barang WHERE "
                 + "LOWER(nama) = LOWER(?) AND "
@@ -44,6 +81,9 @@ public class BarangDAO {
         }
     }
 
+    /**
+     * Menambah barang baru ke database
+     */
     public void add(Barang barang) throws SQLException {
         validateBarang(barang);
         String sql = "INSERT INTO barang (nama, kategori, jumlah, kondisi, lokasi) VALUES (?, ?, ?, ?, ?)";
@@ -71,7 +111,7 @@ public class BarangDAO {
         }
 
         List<Barang> results = new ArrayList<>();
-        // Modified SQL to use LOWER() function for case-insensitive search
+        // Mengubah SQL untuk menggunakan fungsi LOWER() agar pencarian tidak peka huruf besar/kecil
         String sql = "SELECT * FROM barang WHERE "
                 + "LOWER(nama) LIKE LOWER(?) OR "
                 + "LOWER(kategori) LIKE LOWER(?) OR "
@@ -97,6 +137,7 @@ public class BarangDAO {
         }
         return results;
     }
+
 
     public List<Barang> getAll() throws SQLException {
         List<Barang> results = new ArrayList<>();
